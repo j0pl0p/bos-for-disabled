@@ -18,6 +18,9 @@ public class code : MonoBehaviour
     TcpClient client;
     Vector3 receivedPos = Vector3.zero;
     bool running;
+    public float smoothTime = 0.5f;
+    public float speed = 10;
+    Vector3 velocity;
     // Start is called before the first frame update
     void Start()
     {
@@ -35,6 +38,7 @@ public class code : MonoBehaviour
         for (int i = 0; i < 21; i++)
         {
             points[i].transform.position = new Vector3(CoordinatesForPoint[i, 0], CoordinatesForPoint[i, 1], CoordinatesForPoint[i, 2]);
+            //points[i].transform.localPosition = new Vector3(CoordinatesForPoint[i, 0], CoordinatesForPoint[i, 1], CoordinatesForPoint[i, 2]);
         }
     }
     void GetInfo()
