@@ -5,6 +5,43 @@ using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
 using System.Threading;
+using Unity.VisualScripting;
+using System;
+
+public static class Extns
+{
+    public static IEnumerator Tweeng(this float duration,
+               System.Action<float> var, float aa, float zz)
+    {
+        float sT = Time.time;
+        float eT = sT + duration;
+
+        while (Time.time < eT)
+        {
+            float t = (Time.time - sT) / duration;
+            var(Mathf.SmoothStep(aa, zz, t));
+            yield return null;
+        }
+
+        var(zz);
+    }
+
+    public static IEnumerator Tweeng(this float duration,
+               System.Action<Vector3> var, Vector3 aa, Vector3 zz)
+    {
+        float sT = Time.time;
+        float eT = sT + duration;
+
+        while (Time.time < eT)
+        {
+            float t = (Time.time - sT) / duration;
+            var(Vector3.Lerp(aa, zz, Mathf.SmoothStep(0f, 1f, t)));
+            yield return null;
+        }
+
+        var(zz);
+    }
+}
 
 public class code : MonoBehaviour
 {
@@ -13,13 +50,14 @@ public class code : MonoBehaviour
     int[,] CoordinatesForPoint = new int[21, 3];
     public string connectionIP = "127.0.0.1";
     public int connectionPort = 25001;
+    public float speed = 300;
     IPAddress localAdd;
     TcpListener listener;
     TcpClient client;
     Vector3 receivedPos = Vector3.zero;
     bool running;
-    // Start is called before the first frame update
-    void Start()
+    // Start is called before the first frame update
+    void Start()
     {
         Debug.Log("Start");
         ThreadStart ts = new ThreadStart(GetInfo);
@@ -27,16 +65,48 @@ public class code : MonoBehaviour
         mThread.Start();
     }
 
-    // Update is called once per frame
-    void Update()
+    // Update is called once per frame
+    void Update()
     {
         points = GameObject.FindGameObjectsWithTag("points");
 
         for (int i = 0; i < 21; i++)
         {
-            points[i].transform.position = new Vector3(CoordinatesForPoint[i, 0], CoordinatesForPoint[i, 1], CoordinatesForPoint[i, 2]);
+            Vector3 prevPosition = points[i].transform.position;
+            Vector3 targetPosition = new Vector3(CoordinatesForPoint[i, 0], CoordinatesForPoint[i, 1], CoordinatesForPoint[i, 2]);
+            double x1 = prevPosition.x;
+            double y1 = prevPosition.y;
+            double z1 = prevPosition.z;
+            double x2 = targetPosition.x;
+            double y2 = targetPosition.y;
+            double z2 = targetPosition.z;
+            double dx = Math.Abs(x1 - x2);
+            double dy = Math.Abs(y1 - y2);
+            double dz = Math.Abs(z1 - z2);
+            float length = (float)Math.Pow(dx * dx + dy * dy + dz * dz, 0.5);
+            speed = length / 10f;
+            points[i].transform.position = Vector3.MoveTowards(prevPosition, targetPosition, speed); // * Time.deltaTime;
+            // StartCoroutine(DoMove(points[i], Time.deltaTime, prevPosition, new Vector3(10, 10, 10)));
+            // points[i].transform.Translate(targetPosition - prevPosition, Space.World);
+            // points[i].transform.position = Vector3.Lerp(prevPosition, targetPosition, Time.deltaTime);
         }
+        Debug.Log("ESHKERE!!!");
     }
+
+    private IEnumerator DoMove(GameObject point, float duration, Vector3 startPosition, Vector3 targetPosition)
+    {
+        float timeElapsed = 0f;
+        while (timeElapsed <= duration)
+        {
+            point.transform.position = Vector3.Lerp(startPosition, targetPosition, timeElapsed / duration);
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+        point.transform.position = targetPosition;
+        Debug.Log("moved point to");
+        Debug.Log(targetPosition);
+    }
+
     void GetInfo()
     {
         Debug.Log("GetInfo");
@@ -81,10 +151,7 @@ public class code : MonoBehaviour
             }
             Debug.Log("kjdshi");
 
-            byte[] myWriteBuffer = Encoding.ASCII.GetBytes("ìá ïðèãîäèòñÿ");
-            nwStream.Write(myWriteBuffer, 0, myWriteBuffer.Length);
+
         }
     }
 }
-
-
